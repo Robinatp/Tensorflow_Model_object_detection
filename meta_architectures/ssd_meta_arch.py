@@ -381,7 +381,7 @@ class SSDMetaArch(model.DetectionModel):
       with tf.variable_scope(None, self._extract_features_scope,
                              [preprocessed_inputs]):
         feature_maps = self._feature_extractor.extract_features(
-            preprocessed_inputs)
+            preprocessed_inputs)################################return a model's feature_maps(include 6 layers),model/*feature_extractor.py
       feature_map_spatial_dims = self._get_feature_map_spatial_dims(
           feature_maps)
       image_shape = shape_utils.combined_static_and_dynamic_shape(
@@ -391,7 +391,7 @@ class SSDMetaArch(model.DetectionModel):
               feature_map_spatial_dims,
               im_height=image_shape[1],
               im_width=image_shape[2]))
-      prediction_dict = self._box_predictor.predict(
+      prediction_dict = self._box_predictor.predict(###########return box_encodings_list and class_predictions_list by slim.conv2d,box_predictor.py
           feature_maps, self._anchor_generator.num_anchors_per_location())
       box_encodings = tf.squeeze(
           tf.concat(prediction_dict['box_encodings'], axis=1), axis=2)
