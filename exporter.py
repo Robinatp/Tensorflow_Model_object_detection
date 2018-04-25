@@ -239,6 +239,13 @@ def _add_output_tensor_nodes(postprocessed_tensors,
   if masks is not None:
     tf.add_to_collection(output_collection_name,
                          outputs[detection_fields.detection_masks])
+  '''
+  outputs    dict: {}    
+    'detection_boxes' ()    Tensor: Tensor("detection_boxes:0", shape=(?, 10, 4), dtype=float32)    
+    'detection_classes' (139643297890352)    Tensor: Tensor("detection_classes:0", shape=(?, 10), dtype=float32)    
+    'detection_scores' ()    Tensor: Tensor("detection_scores:0", shape=(?, 10), dtype=float32)    
+    'num_detections' ()    Tensor: Tensor("num_detections:0", shape=(?,), dtype=float32)    
+  '''
   return outputs
 
 
@@ -320,11 +327,31 @@ def write_graph_and_checkpoint(inference_graph_def,
 def _get_outputs_from_inputs(input_tensors, detection_model,
                              output_collection_name):
   inputs = tf.to_float(input_tensors)
-  preprocessed_inputs, true_image_shapes = detection_model.preprocess(inputs)
+  preprocessed_inputs, true_image_shapes = detection_model.preprocess(inputs)# Tensor("Preprocessor/sub:0", shape=(?, 300, 300, 3), dtype=float32)
   output_tensors = detection_model.predict(
       preprocessed_inputs, true_image_shapes)
+  '''
+  output_tensors    dict: {}
+    'anchors' ()    Tensor: Tensor("MultipleGridAnchorGenerator/Identity:0", shape=(1917, 4), dtype=float32)    1917=19*19*3+10*10*6+5*5*6+3*3*6+2*2*6+1*1*6
+    'box_encodings' ()    Tensor: Tensor("concat:0", shape=(?, 1917, 4), dtype=float32)    
+    'class_predictions_with_background' ()    Tensor: Tensor("concat_1:0", shape=(?, 1917, 3), dtype=float32)    
+    'feature_maps' ()    <type 'list'>: [
+     <tf.Tensor 'FeatureExtractor/MobilenetV1/MobilenetV1/Conv2d_11_pointwise/Relu6:0' shape=(?, 19, 19, 512) dtype=float32>,
+     <tf.Tensor 'FeatureExtractor/MobilenetV1/MobilenetV1/Conv2d_13_pointwise/Relu6:0' shape=(?, 10, 10, 1024) dtype=float32>, 
+     <tf.Tensor 'FeatureExtractor/MobilenetV1/Conv2d_13_pointwise_2_Conv2d_2_3x3_s2_512/Relu6:0' shape=(?, 5, 5, 512) dtype=float32>, 
+     <tf.Tensor 'FeatureExtractor/MobilenetV1/Conv2d_13_pointwise_2_Conv2d_3_3x3_s2_256/Relu6:0' shape=(?, 3, 3, 256) dtype=float32>, 
+     <tf.Tensor 'FeatureExtractor/MobilenetV1/Conv2d_13_pointwise_2_Conv2d_4_3x3_s2_256/Relu6:0' shape=(?, 2, 2, 256) dtype=float32>,
+     <tf.Tensor 'FeatureExtractor/MobilenetV1/Conv2d_13_pointwise_2_Conv2d_5_3x3_s2_128/Relu6:0' shape=(?, 1, 1, 128) dtype=float32>]    
+  '''
   postprocessed_tensors = detection_model.postprocess(
       output_tensors, true_image_shapes)
+  '''
+  postprocessed_tensors    dict: {)
+    'detection_boxes' ()    Tensor: Tensor("Postprocessor/BatchMultiClassNonMaxSuppression/map/TensorArrayStack/TensorArrayGatherV3:0", shape=(?, 10, 4), dtype=float32)
+    'detection_classes' ()    Tensor: Tensor("Postprocessor/BatchMultiClassNonMaxSuppression/map/TensorArrayStack_2/TensorArrayGatherV3:0", shape=(?, 10), dtype=float32)    
+    'detection_scores' ()    Tensor: Tensor("Postprocessor/BatchMultiClassNonMaxSuppression/map/TensorArrayStack_1/TensorArrayGatherV3:0", shape=(?, 10), dtype=float32)    
+    'num_detections' ()    Tensor: Tensor("Postprocessor/ToFloat:0", shape=(?,), dtype=float32)    
+  '''
   return _add_output_tensor_nodes(postprocessed_tensors,
                                   output_collection_name)
 
@@ -346,7 +373,13 @@ def _build_detection_graph(input_type, detection_model, input_shape,
       input_tensors=input_tensors,
       detection_model=detection_model,
       output_collection_name=output_collection_name)
-
+  '''
+  outputs    dict: {}    
+    'detection_boxes' ()    Tensor: Tensor("detection_boxes:0", shape=(?, 10, 4), dtype=float32)    
+    'detection_classes' (139643297890352)    Tensor: Tensor("detection_classes:0", shape=(?, 10), dtype=float32)    
+    'detection_scores' ()    Tensor: Tensor("detection_scores:0", shape=(?, 10), dtype=float32)    
+    'num_detections' ()    Tensor: Tensor("num_detections:0", shape=(?,), dtype=float32)    
+  '''
   # Add global step to the graph.
   slim.get_or_create_global_step()
 
@@ -405,7 +438,7 @@ def _export_inference_graph(input_type,
   if additional_output_tensor_names is not None:
     output_node_names = ','.join(outputs.keys()+additional_output_tensor_names)
   else:
-    output_node_names = ','.join(outputs.keys())
+    output_node_names = ','.join(outputs.keys())#output_node_names    str: detection_classes,detection_boxes,detection_scores,num_detections    
 
   frozen_graph_def = freeze_graph_with_def_protos(
       input_graph_def=tf.get_default_graph().as_graph_def(),

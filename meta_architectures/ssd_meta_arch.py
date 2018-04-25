@@ -292,13 +292,13 @@ class SSDMetaArch(model.DetectionModel):
       # TODO(jonathanhuang): revisit whether to always use batch size as
       # the number of parallel iterations vs allow for dynamic batching.
       outputs = shape_utils.static_or_dynamic_map_fn(
-          self._image_resizer_fn,
+          self._image_resizer_fn,#Tensor("Preprocessor/map/TensorArrayStack/TensorArrayGatherV3:0", shape=(?, 300, 300, 3), dtype=float32)
           elems=inputs,
           dtype=[tf.float32, tf.int32])
       resized_inputs = outputs[0]
       true_image_shapes = outputs[1]
 
-      return (self._feature_extractor.preprocess(resized_inputs),
+      return (self._feature_extractor.preprocess(resized_inputs),#SSDMobileNetV1FeatureExtractor
               true_image_shapes)
 
   def _compute_clip_window(self, preprocessed_images, true_image_shapes):
@@ -382,21 +382,50 @@ class SSDMetaArch(model.DetectionModel):
                              [preprocessed_inputs]):
         feature_maps = self._feature_extractor.extract_features(
             preprocessed_inputs)################################return a model's feature_maps(include 6 layers),model/*feature_extractor.py
+        '''
+        feature_maps    <type 'list'>: []
+        0    Tensor: Tensor("FeatureExtractor/MobilenetV1/MobilenetV1/Conv2d_11_pointwise/Relu6:0", shape=(?, 19, 19, 512), dtype=float32)    
+        1    Tensor: Tensor("FeatureExtractor/MobilenetV1/MobilenetV1/Conv2d_13_pointwise/Relu6:0", shape=(?, 10, 10, 1024), dtype=float32)    
+        2    Tensor: Tensor("FeatureExtractor/MobilenetV1/Conv2d_13_pointwise_2_Conv2d_2_3x3_s2_512/Relu6:0", shape=(?, 5, 5, 512), dtype=float32)    
+        3    Tensor: Tensor("FeatureExtractor/MobilenetV1/Conv2d_13_pointwise_2_Conv2d_3_3x3_s2_256/Relu6:0", shape=(?, 3, 3, 256), dtype=float32)    
+        4    Tensor: Tensor("FeatureExtractor/MobilenetV1/Conv2d_13_pointwise_2_Conv2d_4_3x3_s2_256/Relu6:0", shape=(?, 2, 2, 256), dtype=float32)    
+        5    Tensor: Tensor("FeatureExtractor/MobilenetV1/Conv2d_13_pointwise_2_Conv2d_5_3x3_s2_128/Relu6:0", shape=(?, 1, 1, 128), dtype=float32)    
+        '''
       feature_map_spatial_dims = self._get_feature_map_spatial_dims(
           feature_maps)
-      image_shape = shape_utils.combined_static_and_dynamic_shape(
+	  '''
+	  feature_map_spatial_dims    <type 'list'>: [(19, 19), (10, 10), (5, 5), (3, 3), (2, 2), (1, 1)]    
+	  0    <type 'tuple'>: (19, 19)    
+	  1    <type 'tuple'>: (10, 10)    
+	  2    <type 'tuple'>: (5, 5)    
+	  3    <type 'tuple'>: (3, 3)    
+	  4    <type 'tuple'>: (2, 2)    
+	  5    <type 'tuple'>: (1, 1)    
+	  '''
+      image_shape = shape_utils.combined_static_and_dynamic_shape(#Tensor: Tensor("Shape_6:0", shape=(4,), dtype=int32)
           preprocessed_inputs)
       self._anchors = box_list_ops.concatenate(
           self._anchor_generator.generate(
               feature_map_spatial_dims,
               im_height=image_shape[1],
               im_width=image_shape[2]))
+      '''
+      "self._anchors"    BoxList: <object_detection.core.box_list.BoxList object at 0x7f209bf84390>    
+      data    
+         dict: {}    
+        'boxes' (139778851590816)    Tensor: Tensor("MultipleGridAnchorGenerator/Identity:0", shape=(1917, 4), dtype=float32)    
+        'stddev' (139779232329184)    Tensor: Tensor("MultipleGridAnchorGenerator/mul_56:0", shape=(1917, 4), dtype=float32)    
+      '''
       prediction_dict = self._box_predictor.predict(###########return box_encodings_list and class_predictions_list by slim.conv2d,box_predictor.py
           feature_maps, self._anchor_generator.num_anchors_per_location())
       box_encodings = tf.squeeze(
           tf.concat(prediction_dict['box_encodings'], axis=1), axis=2)
       class_predictions_with_background = tf.concat(
           prediction_dict['class_predictions_with_background'], axis=1)
+      '''
+      box_encodings    Tensor: Tensor("concat:0", shape=(?, 1917, 4), dtype=float32)    
+      class_predictions_with_background    Tensor: Tensor("concat_1:0", shape=(?, 1917, 3), dtype=float32)    
+      '''
       predictions_dict = {
           'preprocessed_inputs': preprocessed_inputs,
           'box_encodings': box_encodings,

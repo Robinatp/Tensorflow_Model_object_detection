@@ -71,11 +71,15 @@ FLAGS = tf.flags.FLAGS
 def bboxes_select(classes, scores, bboxes, threshold=0.1):
     """Sort bounding boxes by decreasing order and keep only the top_k
     """
-    mask = scores > threshold
-    classes = classes[mask]
-    scores = scores[mask]
-    bboxes = bboxes[mask]
-    return classes, scores, bboxes
+    mask = tf.greater(scores, threshold)
+    classes = tf.boolean_mask(classes,mask)
+    bboxes = tf.boolean_mask(bboxes,mask)
+    scores = tf.boolean_mask(scores,mask)
+#     mask = scores > threshold
+#     classes = classes[mask]
+#     scores = scores[mask]
+#     bboxes = bboxes[mask]
+    return classes, scores, bboxes,mask
 
 def bboxes_draw_on_img(img, classes, scores, bboxes, thickness=2):
     shape = img.shape
@@ -89,6 +93,7 @@ def bboxes_draw_on_img(img, classes, scores, bboxes, thickness=2):
         s = '%s/%.3f' % (classes[i], scores[i])
         p1 = (p1[0]-5, p1[1])
         cv2.putText(img, s, p1[::-1], cv2.FONT_HERSHEY_DUPLEX, 0.4, (255, 0, 0), 1)
+  
 
 def main(_):
   tf.logging.set_verbosity(tf.logging.INFO)
@@ -109,7 +114,7 @@ def main(_):
     (detected_boxes_tensor, detected_scores_tensor,
      detected_labels_tensor) = detection_inference.build_inference_graph(
          image_tensor, FLAGS.inference_graph)
-
+              
     tf.logging.info('Running inference and writing output to {}'.format(
         FLAGS.output_tfrecord_path))
     sess.run(tf.local_variables_initializer())
@@ -127,6 +132,8 @@ def main(_):
           if(FLAGS.show_image_on_run):
               png_string = tf_example.features.feature['image/encoded'].bytes_list.value[0]
               decoded_img = tf.image.decode_jpeg(png_string, channels=3)
+              
+              
               img_data_jpg = tf.expand_dims(tf.image.convert_image_dtype(decoded_img, dtype=tf.float32), 0)
               
               label = tf_example.features.feature['image/detection/label'].int64_list.value[:]
@@ -139,10 +146,11 @@ def main(_):
               scores = tf_example.features.feature['image/detection/score'].float_list.value[:]
               boxes = tf.transpose(tf.stack([ymin, xmin, ymax, xmax], 0))
 
-              classes, scores, boxes = bboxes_select( np.asarray(label),  np.asarray(scores),  np.asarray(boxes.eval()), threshold=0.5)
-              print(boxes)
-              print(classes)
-              print(scores)    
+              #classes, scores, boxes = bboxes_select( np.asarray(label),  np.asarray(scores),  np.asarray(boxes.eval()), threshold=0.5)
+              classes, scores, boxes ,mask= bboxes_select( label, scores, boxes, threshold=0.5)
+#               print(mask.eval())
+#               print(classes)
+#               print(scores)    
               
               #method 1,bboxes_draw_on_img
 #               decoded_img =sess.run(decoded_img)
