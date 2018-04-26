@@ -242,7 +242,7 @@ def _add_output_tensor_nodes(postprocessed_tensors,
   '''
   outputs    dict: {}    
     'detection_boxes' ()    Tensor: Tensor("detection_boxes:0", shape=(?, 10, 4), dtype=float32)    
-    'detection_classes' (139643297890352)    Tensor: Tensor("detection_classes:0", shape=(?, 10), dtype=float32)    
+    'detection_classes' ()    Tensor: Tensor("detection_classes:0", shape=(?, 10), dtype=float32)    
     'detection_scores' ()    Tensor: Tensor("detection_scores:0", shape=(?, 10), dtype=float32)    
     'num_detections' ()    Tensor: Tensor("num_detections:0", shape=(?,), dtype=float32)    
   '''

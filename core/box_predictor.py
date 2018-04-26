@@ -752,6 +752,24 @@ class ConvolutionalBoxPredictor(BoxPredictor):
                       num_predictions_per_location,
                       num_class_slots]))
         class_predictions_list.append(class_predictions_with_background)
+    '''
+    box_encodings_list    <type 'list'>: []    
+    0    Tensor: Tensor("Squeeze:0", shape=(?, 1083, 4), dtype=float32)  19*19*3    
+    1    Tensor: Tensor("Squeeze_1:0", shape=(?, 600, 4), dtype=float32)    10*10*6
+    2    Tensor: Tensor("Squeeze_2:0", shape=(?, 150, 4), dtype=float32)    5*5*6
+    3    Tensor: Tensor("Squeeze_3:0", shape=(?, 54, 4), dtype=float32)    3*3*6
+    4    Tensor: Tensor("Squeeze_4:0", shape=(?, 24, 4), dtype=float32)    2*2*6
+    5    Tensor: Tensor("Squeeze_5:0", shape=(?, 6, 4), dtype=float32)    1*1*6
+    
+    
+    class_predictions_list    <type 'list'>: []    
+    0    Tensor: Tensor("BoxPredictor_0/Reshape_1:0", shape=(?, 1083, 3), dtype=float32)    19*19*3    
+    1    Tensor: Tensor("BoxPredictor_1/Reshape_1:0", shape=(?, 600, 3), dtype=float32)    10*10*6
+    2    Tensor: Tensor("BoxPredictor_2/Reshape_1:0", shape=(?, 150, 3), dtype=float32)    5*5*6
+    3    Tensor: Tensor("BoxPredictor_3/Reshape_1:0", shape=(?, 54, 3), dtype=float32)    3*3*6
+    4    Tensor: Tensor("BoxPredictor_4/Reshape_1:0", shape=(?, 24, 3), dtype=float32)    2*2*6
+    5    Tensor: Tensor("BoxPredictor_5/Reshape_1:0", shape=(?, 6, 3), dtype=float32)    1*1*6
+    '''		
     return {
         BOX_ENCODINGS: box_encodings_list,
         CLASS_PREDICTIONS_WITH_BACKGROUND: class_predictions_list

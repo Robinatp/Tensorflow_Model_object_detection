@@ -405,7 +405,7 @@ class SSDMetaArch(model.DetectionModel):
       image_shape = shape_utils.combined_static_and_dynamic_shape(#Tensor: Tensor("Shape_6:0", shape=(4,), dtype=int32)
           preprocessed_inputs)
       self._anchors = box_list_ops.concatenate(
-          self._anchor_generator.generate(
+          self._anchor_generator.generate(#generate the anchor (with corners y_min, x_min, y_max, x_max)
               feature_map_spatial_dims,
               im_height=image_shape[1],
               im_width=image_shape[2]))
@@ -419,7 +419,7 @@ class SSDMetaArch(model.DetectionModel):
       prediction_dict = self._box_predictor.predict(###########return box_encodings_list and class_predictions_list by slim.conv2d,box_predictor.py
           feature_maps, self._anchor_generator.num_anchors_per_location())
       box_encodings = tf.squeeze(
-          tf.concat(prediction_dict['box_encodings'], axis=1), axis=2)
+          tf.concat(prediction_dict['box_encodings'], axis=1), axis=2)#a tensor representing N anchor-encoded boxes of the format[ty, tx, th, tw]
       class_predictions_with_background = tf.concat(
           prediction_dict['class_predictions_with_background'], axis=1)
       '''
@@ -452,6 +452,15 @@ class SSDMetaArch(model.DetectionModel):
         shape_utils.combined_static_and_dynamic_shape(
             feature_map) for feature_map in feature_maps
     ]
+	'''
+    feature_map_shapes    <type 'list'>: []    
+    0    <type 'list'>: [<tf.Tensor 'strided_slice:0' shape=() dtype=int32>, 19, 19, 512]    
+    1    <type 'list'>: [<tf.Tensor 'strided_slice_1:0' shape=() dtype=int32>, 10, 10, 1024]    
+    2    <type 'list'>: [<tf.Tensor 'strided_slice_2:0' shape=() dtype=int32>, 5, 5, 512]    
+    3    <type 'list'>: [<tf.Tensor 'strided_slice_3:0' shape=() dtype=int32>, 3, 3, 256]    
+    4    <type 'list'>: [<tf.Tensor 'strided_slice_4:0' shape=() dtype=int32>, 2, 2, 256]    
+    5    <type 'list'>: [<tf.Tensor 'strided_slice_5:0' shape=() dtype=int32>, 1, 1, 128]
+    '''
     return [(shape[1], shape[2]) for shape in feature_map_shapes]
 
   def postprocess(self, prediction_dict, true_image_shapes):
@@ -498,9 +507,9 @@ class SSDMetaArch(model.DetectionModel):
       raise ValueError('prediction_dict does not contain expected entries.')
     with tf.name_scope('Postprocessor'):
       preprocessed_images = prediction_dict['preprocessed_inputs']
-      box_encodings = prediction_dict['box_encodings']
+      box_encodings = prediction_dict['box_encodings']#a tensor representing N anchor-encoded boxes of the format[ty, tx, th, tw]
       class_predictions = prediction_dict['class_predictions_with_background']
-      detection_boxes, detection_keypoints = self._batch_decode(box_encodings)
+      detection_boxes, detection_keypoints = self._batch_decode(box_encodings)#BoxList holding N boxes encoded in the ordinary way (with corners y_min, x_min, y_max, x_max)
       detection_boxes = tf.expand_dims(detection_boxes, axis=2)
 
       detection_scores_with_background = self._score_conversion_fn(
@@ -514,8 +523,8 @@ class SSDMetaArch(model.DetectionModel):
             fields.BoxListFields.keypoints: detection_keypoints}
       (nmsed_boxes, nmsed_scores, nmsed_classes, _, nmsed_additional_fields,
        num_detections) = self._non_max_suppression_fn(
-           detection_boxes,
-           detection_scores,
+           detection_boxes,#detection_boxes    Tensor: Tensor("Postprocessor/ExpandDims_1:0", shape=(?, 1917, 1, 4), dtype=float32)
+           detection_scores,#detection_scores    Tensor: Tensor("Postprocessor/convert_scores:0", shape=(?, 1917, 2), dtype=float32)    
            clip_window=self._compute_clip_window(
                preprocessed_images, true_image_shapes),
            additional_fields=additional_fields)
